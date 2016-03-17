@@ -26,14 +26,17 @@ module.exports.run = function (worker) {
 
   httpServer.on('request', app)
 
+  // канал в который публикуются все эвенты обо всех постах :)
   Post.changes().then(function (feed) {
     feed.each(function (error, doc) {
       if (error) {
-        return console.log(error)
-        // process.exit(1)
+        console.log(error)
+        return process.exit(1)
       }
-      console.log('publish postsChanges', doc)
 
+      // if (doc.isSaved() === false) was deleted: doc
+      // else if (doc.getOldValue() == null) was inserted: doc
+      // else was updated : doc.getOldValue(), doc
       scServer.exchange.publish('postsChanges', {
         isSaved: doc.isSaved(),
         value: doc,
