@@ -69,11 +69,7 @@ function onConnect (status) {
   socket.emit('getPosts', {page: 1})
   socket.on('receivePosts', onReceivePosts)
 
-
-  $.getJSON('http://faker.hook.io/?property=internet.userName&locale=en', function (text) {
-    $('input[name="author"]').val(text)
-  })
-  $.getJSON('http://faker.hook.io/?property=hacker.phrase&locale=en', function (text) {
+  $.getJSON('http://faker.hook.io/?property=lorem.paragraphs&locale=en', function (text) {
     $('textarea[name="text"]').val(text)
   })
 }
@@ -135,13 +131,9 @@ function postCreated (err) {
     console.log('postCreateError', err)
   } else {
     postId++
-    $.getJSON('http://faker.hook.io/?property=internet.userName&locale=en', function (text) {
-      $('input[name="author"]').val(text)
-    })
-    $.getJSON('http://faker.hook.io/?property=hacker.phrase&locale=en', function (text) {
+    $.getJSON('http://faker.hook.io/?property=lorem.paragraphs&locale=en', function (text) {
       $('textarea[name="text"]').val(text)
     })
-    $('input[name="author"]').val('')
     $('textarea[name="text"]').val('')
   }
 }

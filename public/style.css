@@ -14,7 +14,10 @@ a {
   font-weight: 300;
   color: #72B963;
 }
-
+.container{
+  max-width: 600px;
+  margin: auto;
+}
 form,
 article {
   /*max-width: 400px;*/
