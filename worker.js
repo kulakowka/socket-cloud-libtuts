@@ -7,24 +7,25 @@ var marked = require('marked')
 var thinky = require('thinky')()
 var type = thinky.type
 var r = thinky.r
+var { Tutorial, User } = require('models')
 
 // Synchronous highlighting with highlight.js
-marked.setOptions({
-  highlight: function (code) {
-    return require('highlight.js').highlightAuto(code).value
-  }
-})
+// marked.setOptions({
+//   highlight: function (code) {
+//     return require('highlight.js').highlightAuto(code).value
+//   }
+// })
 
-// Create a model - the table is automatically created
-var Post = thinky.createModel('Post', {
-  title: type.string(),
-  text: type.string(),
-  html: type.string(),
-  author: type.string(),
-  createdAt: type.date().default(r.now())
-})
+// // Create a model - the table is automatically created
+// var Post = thinky.createModel('Post', {
+//   title: type.string(),
+//   text: type.string(),
+//   html: type.string(),
+//   author: type.string(),
+//   createdAt: type.date().default(r.now())
+// })
 
-Post.ensureIndex('createdAt')
+// Post.ensureIndex('createdAt')
 
 module.exports.run = function (worker) {
   console.log('   >> Worker PID:', process.pid)
@@ -38,7 +39,7 @@ module.exports.run = function (worker) {
 
   httpServer.on('request', app)
 
-  Post
+  Tutorial
   .orderBy({ index: r.desc('createdAt') })
   .limit(10)
   .changes()
@@ -57,7 +58,7 @@ module.exports.run = function (worker) {
     // if (doc.isSaved() === false) was deleted: doc
     // else if (doc.getOldValue() == null) was inserted: doc
     // else was updated : doc.getOldValue(), doc
-    scServer.exchange.publish('postsChanges', {
+    scServer.exchange.publish('tutorialsChanges', {
       isSaved: doc.isSaved(),
       value: doc,
       oldValue: doc.getOldValue()
@@ -69,54 +70,75 @@ module.exports.run = function (worker) {
   })
 
   scServer.on('connection', (socket) => {
-    socket.on('postCreate', (data, respond) => {
-      data.html = data.text && marked(data.text)
-      data.author = socket.getAuthToken().username
-      console.log(data)
-      var post = new Post(data)
-      post.saveAll()
-      .then((result) => respond())
-      .catch(respond)
+    socket.on('tutorialCreate', (data, respond) => {
+      console.log('getAuthToken:', socket.getAuthToken())
+      const id = socket.getAuthToken().id
+      User.get(id).run().then((user) => {
+        console.log('USER:', user)
+        data.author = user
+        var tutorial = new Tutorial(data)
+        return tutorial.saveAll().then((result) => respond())
+      }).catch(respond)
     })
 
-    socket.on('getPosts', (data, respond) => {
-      // console.log('onGetPosts', data)
+    socket.on('getTutorials', (data, respond) => {
+      console.log('getTutorials', data)
       const limit = data.limit || 10
-      Post
-      .orderBy({ index: r.desc('createdAt') })
-      .limit(10)
+      Tutorial
+      .getJoin({ author: true, languages: true })
+      .pluck(
+        'id',
+        'title',
+        'contentHtml',
+        'commentsCount',
+        'createdAt',
+        'updatedAt',
+        { author: ['id', 'username', 'fullName'] },
+        { languages: ['id', 'name', 'slug'] }
+      )
+      .orderBy(r.desc('createdAt'))
+      .limit(limit)
       .execute()
-      .then((posts) => {
-        // console.log('posts', posts)
-        socket.emit('receivePosts', posts)
+      .then((data) => {
+        console.log('receiveTutorials', data)
+        socket.emit('receiveTutorials', data)
         respond()
       })
     })
 
     socket.on('login', function (credentials, respond) {
-      var passwordHash = credentials.password // sha256(credentials.password)
+      console.log('login credentials', credentials)
+      var email = credentials.email
+      var password = credentials.password
+      var username = credentials.username
+      User.filter({ username }).run().then((users) => {
+        let user = users[0]
+        // console.log('users', users)
+        if (!users.length) {
+          user = new User({ email, password, username })
 
-      // var userQuery = 'SELECT * FROM Users WHERE username = ?'
-      // mySQLClient.query(userQuery, [credentials.username], function (err, rows) {
-      var userRow = credentials // rows[0]
-      var isValidLogin = userRow && userRow.password === passwordHash
+          return user.saveAll()
+          .then((user) => {
+            console.log('created user', user)
+            delete user.password
+            socket.setAuthToken(user)
+            respond()
+          })
+          .catch(respond)
+        }
 
-      console.log('userRow', userRow)
-
-      socket.emit('whoami', userRow)
-
-      if (isValidLogin) {
-        respond()
-
-        // This will give the client a token so that they won't
-        // have to login again if they lose their connection
-        // or revisit the app at a later time.
-        socket.setAuthToken({ username: credentials.username })
-      } else {
-        // Passing string as first argument indicates error
-        respond('Login failed')
-      }
-      // })
+        console.log('founded user', user)
+        user.checkPassword(password, (err, valid) => {
+          console.log('checkPassword result:', err, valid)
+          console.log('password:', password)
+          console.log('user password:', user.password)
+          if (err || !valid) return respond('Incorrect password.')
+          delete user.password
+          console.log('setAuthToken 2', user)
+          socket.setAuthToken(user)
+          respond()
+        })
+      }).catch(respond)
     })
   })
 }

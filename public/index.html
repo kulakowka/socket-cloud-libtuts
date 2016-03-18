@@ -13,16 +13,18 @@
   <body>
     <div class="container">
       <form id="logInForm">
-        <input type="text" name="username" placeholder="username">
-        <input type="password" name="password" placeholder="password">
+        <input type="text" name="email" placeholder="email" value="admin@mail.com">
+        <input type="text" name="username" placeholder="username" value="admin">
+        <input type="password" name="password" placeholder="password" value="pass">
         <br>
         <button type="submit">Login</button>
       </form>
       <form id="newPostForm">
         <span id="username"></span><button id="logout">logout</button>
-        <textarea rows="5" name="text"></textarea>
+        <textarea rows="1" name="title" placeholder="title">Tutorial Title 1</textarea>
+        <textarea rows="5" name="content" placeholder="content">Tutorial Text 1</textarea>
         <br>
-        <button type="submit">Create Post</button>
+        <button type="submit">Create tutorial</button>
       </form>
       <div id="postsList"></div>
     </div>

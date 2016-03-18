@@ -2,6 +2,9 @@
   "name": "socketcluster-sample",
   "description": "A sample SocketCluster app",
   "version": "1.0.0",
+  "scripts": {
+    "start": "NODE_PATH=. node --harmony --harmony_destructuring --harmony_default_parameters server.js"
+  },
   "contributors": [
     {
       "name": "Jonathan Gros-Dubois",
@@ -9,12 +12,15 @@
     }
   ],
   "dependencies": {
+    "bcrypt": "^0.8.5",
+    "co": "^4.6.0",
     "connect": "3.0.1",
     "express": "4.13.1",
     "highlight.js": "^9.2.0",
     "marked": "^0.3.5",
     "minimist": "1.1.0",
     "serve-static": "1.8.0",
+    "slug": "^0.9.1",
     "socketcluster": "4.x.x",
     "socketcluster-client": "4.x.x",
     "thinky": "^2.2.6"

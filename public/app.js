@@ -6,11 +6,12 @@ socket.on('error', onError)
 socket.on('connect', onConnect)
 
 // post changes
-var postsChanges = socket.subscribe('postsChanges')
+var tutorialsChanges = socket.subscribe('tutorialsChanges')
 
-postsChanges.on('subscribeFail', subscribeFailed)
+tutorialsChanges.on('subscribeFail', subscribeFailed)
 
-postsChanges.watch(postChanged)
+tutorialsChanges.watch(tutorialChanged)
+
 $('#logout').on('click', function () {
   socket.deauthenticate(function (err) {
     if (err) {
@@ -24,7 +25,7 @@ $('#logout').on('click', function () {
 
 $('#logInForm').on('submit', function () {
   var data = getFormData(this)
-  
+
   console.log('login', data)
 
   if (data.username !== '' && data.password !== '') {
@@ -46,7 +47,7 @@ $('#newPostForm').on('submit', function () {
   var data = getFormData(this)
 
   if (data.text !== '' && data.author !== '') {
-    socket.emit('postCreate', data, postCreated)
+    socket.emit('tutorialCreate', data, tutorialCreated)
   }
   return false
 })
@@ -58,7 +59,7 @@ function onConnect (status) {
     console.log('CONNECTED: is Authenticated', status)
     $('#logInForm').hide()
     $('#newPostForm').show()
-    $('#username').text(socket.getAuthToken().username)
+    $('#username').text(socket.getAuthToken().username || '')
   } else {
     $('#logInForm').show()
     $('#newPostForm').hide()
@@ -66,53 +67,54 @@ function onConnect (status) {
   }
 
   // console.log('get initial posts', {page: 1})
-  socket.emit('getPosts', {page: 1})
-  socket.on('receivePosts', onReceivePosts)
+  socket.emit('getTutorials', {page: 1})
+  socket.on('receiveTutorials', onReceiveTutorials)
 
   $.getJSON('http://faker.hook.io/?property=lorem.paragraphs&locale=en', function (text) {
     $('textarea[name="text"]').val(text)
   })
 }
 
-function onReceivePosts (data, respond) {
-  // console.log('receivePosts', data)
-  var list = data.map(getPost)
+function onReceiveTutorials (data, respond) {
+  console.log('receivePosts', data)
+  var list = data.map(getTutorial)
   $('#postsList').html(list)
   respond()
 }
 
-function postChanged (data) {
-  console.log('postChanged', data)
+function tutorialChanged (data) {
+  console.log('tutorialChanged', data)
 
-  var newPost = getPost(data.value)
+  var newTutorial = getTutorial(data.value)
 
   if (data.oldValue && data.isSaved) {
-    var postItem = $('#postsList').find('#' + data.oldValue.id)
+    var tutorialItem = $('#postsList').find('#' + data.oldValue.id)
 
     if (data.oldValue.id === data.value.id) {
-      postItem.replaceWith(newPost)
+      tutorialItem.replaceWith(newTutorial)
     } else {
-      postItem.remove()
-      $('#postsList').prepend(newPost)
+      tutorialItem.remove()
+      $('#postsList').prepend(newTutorial)
     }
   } else if (data.isSaved) {
     // console.log('add post', newPost)
-    $('#postsList').prepend(newPost)
+    $('#postsList').prepend(newTutorial)
   } else {
     // console.log('remove post', newPost)
     $('#postsList').find('#' + data.value.id).remove()
   }
 }
 
-function getPost (data) {
-  var newPost = $('<article></article>')
-  newPost.attr('id', data.id)
+function getTutorial (data) {
+  console.log('getTutorial', data)
+  var newTutorial = $('<article></article>')
+  newTutorial.attr('id', data.id)
   var createdAt = $('<span class="createdAt"></span>').text(data.createdAt)
-  var html = $('<span class="text markdown-body"></span>').html(data.html)
-  var author = $('<b class="author"></b>').text(data.author + ': ')
-  if (socket.getAuthToken().username === data.author) author.addClass('me')
-  newPost.append(author).append(html).append(createdAt)
-  return newPost
+  var html = $('<span class="text markdown-body"></span>').html(data.contentHtml)
+  var author = $('<b class="author"></b>').text(data.author.username + ': ')
+  if (socket.getAuthToken() && socket.getAuthToken().id === data.author.id) author.addClass('me')
+  newTutorial.append(author).append(html).append(createdAt)
+  return newTutorial
 }
 
 function getFormData (form) {
@@ -126,9 +128,9 @@ function getFormData (form) {
 
 var postId = 1
 
-function postCreated (err) {
+function tutorialCreated (err) {
   if (err) {
-    console.log('postCreateError', err)
+    console.log('tutorialCreateError', err)
   } else {
     postId++
     $.getJSON('http://faker.hook.io/?property=lorem.paragraphs&locale=en', function (text) {
