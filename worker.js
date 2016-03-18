@@ -71,6 +71,8 @@ module.exports.run = function (worker) {
   scServer.on('connection', (socket) => {
     socket.on('postCreate', (data, respond) => {
       data.html = data.text && marked(data.text)
+      data.author = socket.getAuthToken().username
+      console.log(data)
       var post = new Post(data)
       post.saveAll()
       .then((result) => respond())
@@ -89,6 +91,32 @@ module.exports.run = function (worker) {
         socket.emit('receivePosts', posts)
         respond()
       })
+    })
+
+    socket.on('login', function (credentials, respond) {
+      var passwordHash = credentials.password // sha256(credentials.password)
+
+      // var userQuery = 'SELECT * FROM Users WHERE username = ?'
+      // mySQLClient.query(userQuery, [credentials.username], function (err, rows) {
+      var userRow = credentials // rows[0]
+      var isValidLogin = userRow && userRow.password === passwordHash
+
+      console.log('userRow', userRow)
+
+      socket.emit('whoami', userRow)
+
+      if (isValidLogin) {
+        respond()
+
+        // This will give the client a token so that they won't
+        // have to login again if they lose their connection
+        // or revisit the app at a later time.
+        socket.setAuthToken({ username: credentials.username })
+      } else {
+        // Passing string as first argument indicates error
+        respond('Login failed')
+      }
+      // })
     })
   })
 }

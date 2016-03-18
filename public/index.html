@@ -12,9 +12,14 @@
   </head>
   <body>
     <div class="container">
-      
+      <form id="logInForm">
+        <input type="text" name="username" placeholder="username">
+        <input type="password" name="password" placeholder="password">
+        <br>
+        <button type="submit">Login</button>
+      </form>
       <form id="newPostForm">
-        <input type="text" name="author">
+        <button id="logout">logout</button>
         <textarea rows="5" name="text"></textarea>
         <br>
         <button type="submit">Create Post</button>

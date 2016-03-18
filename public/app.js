@@ -11,9 +11,39 @@ var postsChanges = socket.subscribe('postsChanges')
 postsChanges.on('subscribeFail', subscribeFailed)
 
 postsChanges.watch(postChanged)
+$('#logout').on('click', function () {
+  socket.deauthenticate(function (err) {
+    if (err) {
+      console.log('show deauthenticate Error', err)
+    }
+    $('#logInForm').show()
+    $('#newPostForm').hide()
+  })
+  return false
+})
 
+$('#logInForm').on('submit', function () {
+  var data = getFormData(this)
+  
+  console.log('login', data)
+
+  if (data.username !== '' && data.password !== '') {
+    socket.emit('login', data, function (err) {
+      if (err) {
+        console.log('showLoginError', err)
+        $('#logInForm').show()
+        $('#newPostForm').hide()
+      } else {
+        console.log('goToMainScreen')
+        $('#logInForm').hide()
+        $('#newPostForm').show()
+      }
+    })
+  }
+  return false
+})
 $('#newPostForm').on('submit', function () {
-  var data = getPostData(this)
+  var data = getFormData(this)
 
   if (data.text !== '' && data.author !== '') {
     socket.emit('postCreate', data, postCreated)
@@ -26,13 +56,18 @@ $('#newPostForm').on('submit', function () {
 function onConnect (status) {
   if (status.isAuthenticated) {
     console.log('CONNECTED: is Authenticated', status)
+    $('#logInForm').hide()
+    $('#newPostForm').show()
   } else {
+    $('#logInForm').show()
+    $('#newPostForm').hide()
     console.log('CONNECTED: is Guest', status)
   }
 
   // console.log('get initial posts', {page: 1})
   socket.emit('getPosts', {page: 1})
   socket.on('receivePosts', onReceivePosts)
+
 
   $.getJSON('http://faker.hook.io/?property=internet.userName&locale=en', function (text) {
     $('input[name="author"]').val(text)
@@ -82,7 +117,7 @@ function getPost (data) {
   return newPost
 }
 
-function getPostData (form) {
+function getFormData (form) {
   var data = $(form).serializeArray()
 
   return data.reduce(function (res, item) {
