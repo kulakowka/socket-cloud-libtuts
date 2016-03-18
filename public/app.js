@@ -58,6 +58,7 @@ function onConnect (status) {
     console.log('CONNECTED: is Authenticated', status)
     $('#logInForm').hide()
     $('#newPostForm').show()
+    $('#username').text(socket.getAuthToken().username)
   } else {
     $('#logInForm').show()
     $('#newPostForm').hide()
@@ -113,6 +114,7 @@ function getPost (data) {
   var createdAt = $('<span class="createdAt"></span>').text(data.createdAt)
   var html = $('<span class="text markdown-body"></span>').html(data.html)
   var author = $('<b class="author"></b>').text(data.author + ': ')
+  if (socket.getAuthToken().username === data.author) author.addClass('me')
   newPost.append(author).append(html).append(createdAt)
   return newPost
 }

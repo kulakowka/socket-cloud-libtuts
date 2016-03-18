@@ -32,6 +32,9 @@ article .author{
   display: block;
   box-sizing: border-box;
 }
+article .author.me{
+  color: red;
+}
 article .text{
   font-size: 14px;
   margin-top: 5px;
