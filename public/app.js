@@ -98,5 +98,6 @@ function subscribeFailed (err) {
 }
 
 function onError (err) {
+  alert('Чатик больше не работает! Что-то сломалось!!!11!!111!')
   console.log('Socket error - ', err)
 }

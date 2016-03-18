@@ -18,8 +18,6 @@ var Post = thinky.createModel('Post', {
 
 Post.ensureIndex('createdAt')
 
-
-
 module.exports.run = function (worker) {
   console.log('   >> Worker PID:', process.pid)
 
@@ -85,18 +83,6 @@ module.exports.run = function (worker) {
     })
   })
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 // function (socket) {
 //   // Some sample logic to show how to handle client events,
