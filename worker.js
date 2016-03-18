@@ -100,9 +100,9 @@ module.exports.run = function (worker) {
 
     socket.on('login', function (credentials, respond) {
       // console.log('login credentials', credentials)
-      var email = credentials.email
-      var password = credentials.password
-      var username = credentials.username
+      var email = credentials.email.toString().trim().toLowerCase()
+      var password = credentials.password.toString().trim()
+      var username = credentials.username.toString().trim().toLowerCase()
       User.filter({ username }).run().then((users) => {
         let user = users[0]
         // console.log('users', users)

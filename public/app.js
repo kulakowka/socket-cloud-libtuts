@@ -36,6 +36,7 @@ $('#logInForm').on('submit', function () {
         $('#newPostForm').hide()
       } else {
         // console.log('goToMainScreen')
+        $('#username').text(socket.getAuthToken().username || '')
         $('#logInForm').hide()
         $('#newPostForm').show()
       }
