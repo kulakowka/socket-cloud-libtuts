@@ -22,7 +22,6 @@ module.exports.run = function (worker) {
 
   Tutorial
   .orderBy({ index: r.desc('createdAt') })
-  .pluck('id')
   .limit(10)
   .changes()
   .then((feed) => feed.each((error, doc) => {
