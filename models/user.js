@@ -48,6 +48,7 @@ User.ensureIndex('username')
  * account.checkPassword()
  */
 User.define('checkPassword', function (password, callback) {
+  console.log('checkPassword', password, this.password)
   bcrypt.compare(password, this.password, callback)
 })
 

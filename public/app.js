@@ -6,11 +6,11 @@ socket.on('error', onError)
 socket.on('connect', onConnect)
 
 // post changes
-var tutorialsChanges = socket.subscribe('tutorialsChanges')
+// var tutorialsChanges = socket.subscribe('tutorialsChanges')
 
-tutorialsChanges.on('subscribeFail', subscribeFailed)
+// tutorialsChanges.on('subscribeFail', subscribeFailed)
 
-tutorialsChanges.watch(tutorialChanged)
+// tutorialsChanges.watch(tutorialChanged)
 
 $('#logout').on('click', function () {
   socket.deauthenticate(function (err) {
@@ -26,7 +26,7 @@ $('#logout').on('click', function () {
 $('#logInForm').on('submit', function () {
   var data = getFormData(this)
 
-  console.log('login', data)
+  // console.log('login', data)
 
   if (data.username !== '' && data.password !== '') {
     socket.emit('login', data, function (err) {
@@ -35,7 +35,7 @@ $('#logInForm').on('submit', function () {
         $('#logInForm').show()
         $('#newPostForm').hide()
       } else {
-        console.log('goToMainScreen')
+        // console.log('goToMainScreen')
         $('#logInForm').hide()
         $('#newPostForm').show()
       }
@@ -76,14 +76,14 @@ function onConnect (status) {
 }
 
 function onReceiveTutorials (data, respond) {
-  console.log('receivePosts', data)
+  // console.log('receivePosts', data)
   var list = data.map(getTutorial)
   $('#postsList').html(list)
   respond()
 }
 
 function tutorialChanged (data) {
-  console.log('tutorialChanged', data)
+  // console.log('tutorialChanged', data)
 
   var newTutorial = getTutorial(data.value)
 
@@ -106,7 +106,7 @@ function tutorialChanged (data) {
 }
 
 function getTutorial (data) {
-  console.log('getTutorial', data)
+  // console.log('getTutorial', data)
   var newTutorial = $('<article></article>')
   newTutorial.attr('id', data.id)
   var createdAt = $('<span class="createdAt"></span>').text(data.createdAt)
