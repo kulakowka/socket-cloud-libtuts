@@ -14,7 +14,10 @@ postsChanges.watch(postChanged)
 
 $('#newPostForm').on('submit', function () {
   var data = getPostData(this)
-  socket.emit('postCreate', data, postCreated)
+
+  if (data.text !== '' && data.author !== '') {
+    socket.emit('postCreate', data, postCreated)
+  }
   return false
 })
 
@@ -30,6 +33,13 @@ function onConnect (status) {
   // console.log('get initial posts', {page: 1})
   socket.emit('getPosts', {page: 1})
   socket.on('receivePosts', onReceivePosts)
+
+  $.getJSON('http://faker.hook.io/?property=internet.userName&locale=en', function (text) {
+    $('input[name="author"]').val(text)
+  })
+  $.getJSON('http://faker.hook.io/?property=hacker.phrase&locale=en', function (text) {
+    $('textarea[name="text"]').val(text)
+  })
 }
 
 function onReceivePosts (data, respond) {
@@ -66,9 +76,9 @@ function getPost (data) {
   var newPost = $('<article></article>')
   newPost.attr('id', data.id)
   var createdAt = $('<span class="createdAt"></span>').text(data.createdAt)
-  var text = $('<span class="text"></span>').text(data.text)
+  var html = $('<span class="text markdown-body"></span>').html(data.html)
   var author = $('<b class="author"></b>').text(data.author + ': ')
-  newPost.append(author).append(text).append(createdAt)
+  newPost.append(author).append(html).append(createdAt)
   return newPost
 }
 
@@ -76,7 +86,7 @@ function getPostData (form) {
   var data = $(form).serializeArray()
 
   return data.reduce(function (res, item) {
-    res[item.name] = item.value
+    res[item.name] = item.value.trim()
     return res
   }, {})
 }
@@ -88,8 +98,14 @@ function postCreated (err) {
     console.log('postCreateError', err)
   } else {
     postId++
-    $('input[name="title"]').val('Post ' + postId)
-    $('textarea[name="text"]').val('Text ' + postId)
+    $.getJSON('http://faker.hook.io/?property=internet.userName&locale=en', function (text) {
+      $('input[name="author"]').val(text)
+    })
+    $.getJSON('http://faker.hook.io/?property=hacker.phrase&locale=en', function (text) {
+      $('textarea[name="text"]').val(text)
+    })
+    $('input[name="author"]').val('')
+    $('textarea[name="text"]').val('')
   }
 }
 
@@ -98,6 +114,6 @@ function subscribeFailed (err) {
 }
 
 function onError (err) {
-  alert('Чатик больше не работает! Что-то сломалось!!!11!!111!')
+  // alert('Чатик больше не работает! Что-то сломалось!!!11!!111!')
   console.log('Socket error - ', err)
 }

@@ -3,15 +3,23 @@
 var express = require('express')
 var serveStatic = require('serve-static')
 var path = require('path')
-
+var marked = require('marked')
 var thinky = require('thinky')()
 var type = thinky.type
 var r = thinky.r
+
+// Synchronous highlighting with highlight.js
+marked.setOptions({
+  highlight: function (code) {
+    return require('highlight.js').highlightAuto(code).value
+  }
+})
 
 // Create a model - the table is automatically created
 var Post = thinky.createModel('Post', {
   title: type.string(),
   text: type.string(),
+  html: type.string(),
   author: type.string(),
   createdAt: type.date().default(r.now())
 })
@@ -32,7 +40,7 @@ module.exports.run = function (worker) {
 
   Post
   .orderBy({ index: r.desc('createdAt') })
-  .limit(5)
+  .limit(10)
   .changes()
   .then((feed) => feed.each((error, doc) => {
     if (error) {
@@ -62,6 +70,7 @@ module.exports.run = function (worker) {
 
   scServer.on('connection', (socket) => {
     socket.on('postCreate', (data, respond) => {
+      data.html = data.text && marked(data.text)
       var post = new Post(data)
       post.saveAll()
       .then((result) => respond())
@@ -73,7 +82,7 @@ module.exports.run = function (worker) {
       const limit = data.limit || 10
       Post
       .orderBy({ index: r.desc('createdAt') })
-      .limit(5)
+      .limit(10)
       .execute()
       .then((posts) => {
         // console.log('posts', posts)
@@ -101,31 +110,31 @@ module.exports.run = function (worker) {
 //   //   // })
 //   // }, 3000)
 
-//   // socket.on('login', function (credentials, respond) {
-//   //   var passwordHash = credentials.password // sha256(credentials.password)
+  // socket.on('login', function (credentials, respond) {
+  //   var passwordHash = credentials.password // sha256(credentials.password)
 
-//   //   // var userQuery = 'SELECT * FROM Users WHERE username = ?'
-//   //   // mySQLClient.query(userQuery, [credentials.username], function (err, rows) {
-//   //   var userRow = credentials // rows[0]
-//   //   var isValidLogin = userRow && userRow.password === passwordHash
+  //   // var userQuery = 'SELECT * FROM Users WHERE username = ?'
+  //   // mySQLClient.query(userQuery, [credentials.username], function (err, rows) {
+  //   var userRow = credentials // rows[0]
+  //   var isValidLogin = userRow && userRow.password === passwordHash
 
-//   //   console.log('userRow', userRow)
+  //   console.log('userRow', userRow)
 
-//   //   socket.emit('whoami', userRow)
+  //   socket.emit('whoami', userRow)
 
-//   //   if (isValidLogin) {
-//   //     respond()
+  //   if (isValidLogin) {
+  //     respond()
 
-//   //     // This will give the client a token so that they won't
-//   //     // have to login again if they lose their connection
-//   //     // or revisit the app at a later time.
-//   //     socket.setAuthToken({ username: credentials.username })
-//   //   } else {
-//   //     // Passing string as first argument indicates error
-//   //     respond('Login failed')
-//   //   }
-//   //   // })
-//   // })
+  //     // This will give the client a token so that they won't
+  //     // have to login again if they lose their connection
+  //     // or revisit the app at a later time.
+  //     socket.setAuthToken({ username: credentials.username })
+  //   } else {
+  //     // Passing string as first argument indicates error
+  //     respond('Login failed')
+  //   }
+  //   // })
+  // })
 
 // // socket.on('disconnect', function () {
 // //   // clearInterval(interval)

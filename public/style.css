@@ -28,12 +28,12 @@ article {
   position: relative;
 }
 article .author{
-  font-size: 12px;
+  font-size: 14px;
   display: block;
   box-sizing: border-box;
 }
 article .text{
-  font-size: 12px;
+  font-size: 14px;
   margin-top: 5px;
   display: block;
   box-sizing: border-box;
@@ -43,7 +43,7 @@ article .createdAt{
   right: 10px;
   top: 15px;
   display: inline-block;
-  font-size: 9px;
+  font-size: 11px;
   color: #aaa;
   box-sizing: border-box; 
 }

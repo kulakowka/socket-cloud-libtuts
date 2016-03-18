@@ -2,18 +2,20 @@
 <html>
   <head>
     <title>SocketCluster</title>
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.2.0/styles/github-gist.min.css">
+    <link href="https://sindresorhus.com/github-markdown-css/github-markdown.css" rel="stylesheet" type="text/css">
     <link href="/style.css" rel="stylesheet" type="text/css">
     <link rel="icon" type="image/png" href="/favicon.ico">
     <script src="https://code.jquery.com/jquery-2.2.2.min.js"   integrity="sha256-36cp2Co+/62rEAAYHLmRCPIych47CvdM+uTBJwSzWjI="   crossorigin="anonymous"></script>
     <script type="text/javascript" src="/socketcluster.js"></script>
-
+    
   </head>
   <body>
     <div class="container">
       
       <form id="newPostForm">
-        <input type="text" name="author" value="kulakowka">
-        <textarea name="text">Text 1</textarea>
+        <input type="text" name="author">
+        <textarea rows="5" name="text"></textarea>
         <br>
         <button type="submit">Create Post</button>
       </form>
