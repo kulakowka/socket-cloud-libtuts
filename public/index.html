@@ -3,162 +3,23 @@
   <head>
     <title>SocketCluster</title>
     <link href="//fonts.googleapis.com/css?family=Roboto:100,300" rel="stylesheet" type="text/css">
+    <link href="/style.css" rel="stylesheet" type="text/css">
     <link rel="icon" type="image/png" href="/favicon.ico">
-    <script   src="https://code.jquery.com/jquery-2.2.2.min.js"   integrity="sha256-36cp2Co+/62rEAAYHLmRCPIych47CvdM+uTBJwSzWjI="   crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-2.2.2.min.js"   integrity="sha256-36cp2Co+/62rEAAYHLmRCPIych47CvdM+uTBJwSzWjI="   crossorigin="anonymous"></script>
     <script type="text/javascript" src="/socketcluster.js"></script>
-    <style>
-      html {
-        height: 100%;
-      }
-      body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        color: #666666;
-        display: table;
-        font-weight: 100;
-        font-family: 'Roboto', Helvetica, sans-serif;
-      }
-      a {
-        font-weight: 300;
-        color: #72B963;
-      }
-      .container {
-        display: table-cell;
-        text-align: center;
-        vertical-align: middle;
-      }
-      .content {
-        text-align: center;
-        display: inline-block;
-      }
 
-      form,
-      article {
-        max-width: 400px;
-        margin: auto;
-        text-align: left;
-        font-size: 14px;
-      }
-      article {
-        margin: 1em auto;
-      }
-      article .author{
-        display: inline-block;
-        width: 20%;
-        text-align: right;
-        padding-right: 10px;
-        box-sizing: border-box;
-      }
-      article .text{
-        display: inline-block;
-        width: 80%;
-        box-sizing: border-box;
-      }
-      textarea,
-      input{
-        width: 100%;
-        box-sizing: border-box;
-      }
-
-
-    </style>
   </head>
   <body>
     <div class="container">
-      <div id="postsList"></div>
+      
       <form id="newPostForm">
         <input type="text" name="author" value="kulakowka">
-        <!-- <br> -->
-        <!-- <input type="text" name="title" value="Post 1"> -->
-        <!-- <br> -->
         <textarea name="text">Text 1</textarea>
         <br>
         <button type="submit">Create Post</button>
       </form>
-      
+      <div id="postsList"></div>
     </div>
-    <script type="text/javascript">
-      // Initiate the connection to the server
-      var socket = socketCluster.connect();
-
-      socket.on('error', function (err) {
-        throw 'Socket error - ' + err;
-      });
-
-      socket.on('connect', function (status) {
-        if (status.isAuthenticated) {
-          console.log('CONNECTED: is Authenticated', status);
-          // goToMainScreen();
-        } else {
-          console.log('CONNECTED: is Guest', status);
-          // goToLoginScreen();
-        }
-
-      });
-      var postId = 1
-      $('#newPostForm').on('submit', function() {
-
-        
-
-        var data = $(this).serializeArray()
-
-        data = data.reduce(function (res, item) { 
-          res[item.name] = item.value
-          return res
-        }, {})
-
-        // console.log(data)
-
-        socket.emit('postCreate', data, function (err) {
-          if (err) {
-            console.log('postCreateError', err)
-            // showLoginError(err);
-          } else {
-            console.log('postCreated', err)
-            postId++
-            $('input[name="title"]').val('Post ' + postId)
-            $('textarea[name="text"]').val('Text ' + postId)
-          }
-        });
-
-        return false;
-      })
-
-      // socket.on('whoami', function (data) {
-      //   console.log('WHOAMI: ', data);
-      // })
-
-      // socket.on('rand', function (data) {
-      //   console.log('RANDOM STREAM: ' + data.rand);
-      // });
-
-      var sampleChannel = socket.subscribe('postsChanges');
-
-      sampleChannel.on('subscribeFail', function (err) {
-        console.log('Failed to subscribe to the "user/changes" channel due to error: ' + err);
-      });
-
-      sampleChannel.watch(function (data) {
-        var newPost = $('<article></article>')
-
-        newPost.attr('id', data.value.id)
-
-        var text = $('<span class="text"></span>').text(data.value.text)
-        var author = $('<b class="author"></b>').text(data.value.author + ': ')
-        
-        newPost.append(author).append(text)
-          
-        if (data.oldValue) {
-          console.log('updated', data)
-          $('#postsList').find('#' + data.oldValue.id).html(newPost)
-        } else {
-          console.log('created', data.value.id, data)
-          $('#postsList').append(newPost)  
-        }
-
-      });
-    </script>
+    <script type="text/javascript" src="/app.js"></script>
   </body>
 </html>

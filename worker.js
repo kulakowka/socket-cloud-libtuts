@@ -6,13 +6,19 @@ var path = require('path')
 
 var thinky = require('thinky')()
 var type = thinky.type
+var r = thinky.r
 
 // Create a model - the table is automatically created
 var Post = thinky.createModel('Post', {
   title: type.string(),
   text: type.string(),
-  author: type.string()
+  author: type.string(),
+  createdAt: type.date().default(r.now())
 })
+
+Post.ensureIndex('createdAt')
+
+
 
 module.exports.run = function (worker) {
   console.log('   >> Worker PID:', process.pid)
@@ -26,89 +32,117 @@ module.exports.run = function (worker) {
 
   httpServer.on('request', app)
 
-  // канал в который публикуются все эвенты обо всех постах :)
-  Post.changes().then(function (feed) {
-    feed.each(function (error, doc) {
-      if (error) {
-        console.log(error)
-        return process.exit(1)
-      }
+  Post
+  .orderBy({ index: r.desc('createdAt') })
+  .limit(5)
+  .changes()
+  .then((feed) => feed.each((error, doc) => {
+    if (error) {
+      console.log(error)
+      return process.exit(1)
+    }
 
-      // if (doc.isSaved() === false) was deleted: doc
-      // else if (doc.getOldValue() == null) was inserted: doc
-      // else was updated : doc.getOldValue(), doc
-      scServer.exchange.publish('postsChanges', {
-        isSaved: doc.isSaved(),
-        value: doc,
-        oldValue: doc.getOldValue()
-      })
+    // console.log('publish changes', {
+    //   isSaved: doc.isSaved(),
+    //   value: doc,
+    //   oldValue: doc.getOldValue()
+    // })
+
+    // if (doc.isSaved() === false) was deleted: doc
+    // else if (doc.getOldValue() == null) was inserted: doc
+    // else was updated : doc.getOldValue(), doc
+    scServer.exchange.publish('postsChanges', {
+      isSaved: doc.isSaved(),
+      value: doc,
+      oldValue: doc.getOldValue()
     })
-  }).error(function (error) {
+  }))
+  .error(function (error) {
     console.log(error)
     process.exit(1)
   })
-  // setInterval(() => {
-  //   let user = {
-  //     username: 'kulakowka'
-  //   }
 
-  //   scServer.exchange.publish('user/changes', user)
-  // }, 1000)
-
-  /*
-    In here we handle our incoming realtime connections and listen for events.
-  */
-  scServer.on('connection', function (socket) {
-    // Some sample logic to show how to handle client events,
-    // replace this with your own logic
-
-    socket.on('postCreate', function (data, respond) {
-      console.log('Handled postCreateEvent', data)
+  scServer.on('connection', (socket) => {
+    socket.on('postCreate', (data, respond) => {
       var post = new Post(data)
+      post.saveAll()
+      .then((result) => respond())
+      .catch(respond)
+    })
 
-      post.saveAll().then(function (result) {
-        // scServer.exchange.publish('newPosts', result)
+    socket.on('getPosts', (data, respond) => {
+      // console.log('onGetPosts', data)
+      const limit = data.limit || 10
+      Post
+      .orderBy({ index: r.desc('createdAt') })
+      .limit(5)
+      .execute()
+      .then((posts) => {
+        // console.log('posts', posts)
+        socket.emit('receivePosts', posts)
         respond()
       })
     })
-
-    // var interval = setInterval(function () {
-    //   // socket.emit('rand', {
-    //   //   rand: Math.floor(Math.random() * 5)
-    //   // })
-    //   // socket.emit('whoami', {
-    //   //   rand: Math.floor(Math.random() * 5)
-    //   // })
-    // }, 3000)
-
-    // socket.on('login', function (credentials, respond) {
-    //   var passwordHash = credentials.password // sha256(credentials.password)
-
-    //   // var userQuery = 'SELECT * FROM Users WHERE username = ?'
-    //   // mySQLClient.query(userQuery, [credentials.username], function (err, rows) {
-    //   var userRow = credentials // rows[0]
-    //   var isValidLogin = userRow && userRow.password === passwordHash
-
-    //   console.log('userRow', userRow)
-
-    //   socket.emit('whoami', userRow)
-
-    //   if (isValidLogin) {
-    //     respond()
-
-    //     // This will give the client a token so that they won't
-    //     // have to login again if they lose their connection
-    //     // or revisit the app at a later time.
-    //     socket.setAuthToken({ username: credentials.username })
-    //   } else {
-    //     // Passing string as first argument indicates error
-    //     respond('Login failed')
-    //   }
-    //   // })
-    // })
-
-  // socket.on('disconnect', function () {
-  //   // clearInterval(interval)
-  // })
   })
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+// function (socket) {
+//   // Some sample logic to show how to handle client events,
+//   // replace this with your own logic
+
+//   socket.on('postCreate', function (data, respond) {
+
+//   })
+
+//   // var interval = setInterval(function () {
+//   //   // socket.emit('rand', {
+//   //   //   rand: Math.floor(Math.random() * 5)
+//   //   // })
+//   //   // socket.emit('whoami', {
+//   //   //   rand: Math.floor(Math.random() * 5)
+//   //   // })
+//   // }, 3000)
+
+//   // socket.on('login', function (credentials, respond) {
+//   //   var passwordHash = credentials.password // sha256(credentials.password)
+
+//   //   // var userQuery = 'SELECT * FROM Users WHERE username = ?'
+//   //   // mySQLClient.query(userQuery, [credentials.username], function (err, rows) {
+//   //   var userRow = credentials // rows[0]
+//   //   var isValidLogin = userRow && userRow.password === passwordHash
+
+//   //   console.log('userRow', userRow)
+
+//   //   socket.emit('whoami', userRow)
+
+//   //   if (isValidLogin) {
+//   //     respond()
+
+//   //     // This will give the client a token so that they won't
+//   //     // have to login again if they lose their connection
+//   //     // or revisit the app at a later time.
+//   //     socket.setAuthToken({ username: credentials.username })
+//   //   } else {
+//   //     // Passing string as first argument indicates error
+//   //     respond('Login failed')
+//   //   }
+//   //   // })
+//   // })
+
+// // socket.on('disconnect', function () {
+// //   // clearInterval(interval)
+// // })
+// })
+
