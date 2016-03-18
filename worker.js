@@ -20,35 +20,46 @@ module.exports.run = function (worker) {
 
   httpServer.on('request', app)
 
-  // Tutorial
-  // .orderBy({ index: r.desc('createdAt') })
-  // .limit(10)
-  // .changes()
-  // .then((feed) => feed.each((error, doc) => {
-  //   if (error) {
-  //     console.log(error)
-  //     return process.exit(1)
-  //   }
+  Tutorial
+  .orderBy({ index: r.desc('createdAt') })
+  .pluck('id')
+  .limit(10)
+  .changes()
+  .then((feed) => feed.each((error, doc) => {
+    if (error) {
+      console.log(error)
+      return process.exit(1)
+    }
+    console.log(doc)
+    Tutorial
+    .get(doc.id)
+    .getJoin({author: true})
+    .then((tutorial) => {
+      scServer.exchange.publish('tutorialsChanges', {
+        isSaved: doc.isSaved(),
+        value: tutorial,
+        oldValue: doc.getOldValue()
+      })
+    })
+    // console.log('publish changes', {
+    //   isSaved: doc.isSaved(),
+    //   value: doc,
+    //   oldValue: doc.getOldValue()
+    // })
 
-  //   // console.log('publish changes', {
-  //   //   isSaved: doc.isSaved(),
-  //   //   value: doc,
-  //   //   oldValue: doc.getOldValue()
-  //   // })
-
-  //   // if (doc.isSaved() === false) was deleted: doc
-  //   // else if (doc.getOldValue() == null) was inserted: doc
-  //   // else was updated : doc.getOldValue(), doc
-  //   scServer.exchange.publish('tutorialsChanges', {
-  //     isSaved: doc.isSaved(),
-  //     value: doc,
-  //     oldValue: doc.getOldValue()
-  //   })
-  // }))
-  // .error(function (error) {
-  //   console.log(error)
-  //   process.exit(1)
-  // })
+    // if (doc.isSaved() === false) was deleted: doc
+    // else if (doc.getOldValue() == null) was inserted: doc
+    // else was updated : doc.getOldValue(), doc
+    // scServer.exchange.publish('tutorialsChanges', {
+    //   isSaved: doc.isSaved(),
+    //   value: doc,
+    //   oldValue: doc.getOldValue()
+    // })
+  }))
+  .error(function (error) {
+    console.log(error)
+    process.exit(1)
+  })
 
   scServer.on('connection', (socket) => {
     socket.on('tutorialCreate', (data, respond) => {

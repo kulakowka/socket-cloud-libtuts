@@ -6,11 +6,11 @@ socket.on('error', onError)
 socket.on('connect', onConnect)
 
 // post changes
-// var tutorialsChanges = socket.subscribe('tutorialsChanges')
+var tutorialsChanges = socket.subscribe('tutorialsChanges')
 
-// tutorialsChanges.on('subscribeFail', subscribeFailed)
+tutorialsChanges.on('subscribeFail', subscribeFailed)
 
-// tutorialsChanges.watch(tutorialChanged)
+tutorialsChanges.watch(tutorialChanged)
 
 $('#logout').on('click', function () {
   socket.deauthenticate(function (err) {
@@ -110,10 +110,11 @@ function getTutorial (data) {
   var newTutorial = $('<article></article>')
   newTutorial.attr('id', data.id)
   var createdAt = $('<span class="createdAt"></span>').text(data.createdAt)
+  var title = $('<h2></h2>').text(data.title)
   var html = $('<span class="text markdown-body"></span>').html(data.contentHtml)
   var author = $('<b class="author"></b>').text(data.author.username + ': ')
   if (socket.getAuthToken() && socket.getAuthToken().id === data.author.id) author.addClass('me')
-  newTutorial.append(author).append(html).append(createdAt)
+  newTutorial.append(author).append(title).append(html).append(createdAt)
   return newTutorial
 }
 
