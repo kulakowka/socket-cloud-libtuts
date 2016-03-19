@@ -103,7 +103,7 @@ module.exports.run = function (worker) {
       var email = credentials.email.toString().trim().toLowerCase()
       var password = credentials.password.toString().trim()
       var username = credentials.username.toString().trim().toLowerCase()
-      User.filter({ username }).run().then((users) => {
+      User.filter({ email }).run().then((users) => {
         let user = users[0]
         console.log('users', users)
         if (!users.length) {
