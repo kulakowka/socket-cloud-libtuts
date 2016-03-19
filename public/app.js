@@ -1,5 +1,6 @@
 /* global $, socketCluster*/
 
+var postId = 1
 var socket = socketCluster.connect()
 
 socket.on('error', onError)
@@ -25,7 +26,6 @@ $('#logout').on('click', function () {
 
 $('#logInForm').on('submit', function () {
   var data = getFormData(this)
-
   // console.log('login', data)
 
   if (data.username !== '' && data.password !== '') {
@@ -46,7 +46,7 @@ $('#logInForm').on('submit', function () {
 })
 $('#newPostForm').on('submit', function () {
   var data = getFormData(this)
-
+  $('#newPostForm button').attr('disabled', true)
   if (data.text !== '' && data.author !== '') {
     socket.emit('tutorialCreate', data, tutorialCreated)
   }
@@ -71,9 +71,7 @@ function onConnect (status) {
   socket.emit('getTutorials', {page: 1})
   socket.on('receiveTutorials', onReceiveTutorials)
 
-  $.getJSON('http://faker.hook.io/?property=lorem.paragraphs&locale=en', function (text) {
-    $('textarea[name="text"]').val(text)
-  })
+  fillFakeForm()
 }
 
 function onReceiveTutorials (data, respond) {
@@ -128,17 +126,24 @@ function getFormData (form) {
   }, {})
 }
 
-var postId = 1
-
+function fillFakeForm () {
+  postId++
+  $.getJSON('http://faker.hook.io/?property=hacker.phrase&locale=en', function (text) {
+    $('textarea[name="title"]').val(postId + ' ' + text)
+    $.getJSON('http://faker.hook.io/?property=lorem.paragraphs&locale=en', function (text) {
+      $('textarea[name="content"]').val(text)
+      $('#newPostForm button').attr('disabled', false)
+    })
+  })
+}
 function tutorialCreated (err) {
+  // $('#newPostForm button').attr('disabled', false)
   if (err) {
     console.log('tutorialCreateError', err)
   } else {
-    postId++
-    $.getJSON('http://faker.hook.io/?property=lorem.paragraphs&locale=en', function (text) {
-      $('textarea[name="text"]').val(text)
-    })
-    $('textarea[name="text"]').val('')
+    fillFakeForm()
+    $('textarea[name="title"]').val('')
+    $('textarea[name="content"]').val('')
   }
 }
 
