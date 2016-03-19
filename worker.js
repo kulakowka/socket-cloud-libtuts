@@ -3,10 +3,10 @@
 var express = require('express')
 var serveStatic = require('serve-static')
 var path = require('path')
-var thinky = require('thinky')()
-var type = thinky.type
+var thinky = require('utils/thinky')
 var r = thinky.r
-var { Tutorial, User } = require('models')
+var { Tutorial } = require('models')
+var handlers = require('handlers')
 
 module.exports.run = function (worker) {
   console.log('   >> Worker PID:', process.pid)
@@ -34,26 +34,12 @@ module.exports.run = function (worker) {
     .get(doc.id)
     .getJoin({author: true})
     .then((tutorial) => {
-      scServer.exchange.publish('changesTutorials', {
+      scServer.exchange.publish('tutorials:changes', {
         isSaved: doc.isSaved(),
         value: tutorial,
         oldValue: doc.getOldValue()
       })
     })
-    // console.log('publish changes', {
-    //   isSaved: doc.isSaved(),
-    //   value: doc,
-    //   oldValue: doc.getOldValue()
-    // })
-
-    // if (doc.isSaved() === false) was deleted: doc
-    // else if (doc.getOldValue() == null) was inserted: doc
-    // else was updated : doc.getOldValue(), doc
-    // scServer.exchange.publish('tutorialsChanges', {
-    //   isSaved: doc.isSaved(),
-    //   value: doc,
-    //   oldValue: doc.getOldValue()
-    // })
   }))
   .error(function (error) {
     console.log(error)
@@ -61,78 +47,10 @@ module.exports.run = function (worker) {
   })
 
   scServer.on('connection', (socket) => {
-    socket.on('tutorialCreate', (data, respond) => {
-      // console.log('getAuthToken:', socket.getAuthToken())
-      const id = socket.getAuthToken().id
-      
-      User.get(id).run().then((user) => {
-        // console.log('USER:', user)
-        data.author = user
-        var tutorial = new Tutorial(data)
-        return tutorial.saveAll().then((result) => respond())
-      }).catch(respond)
-    })
-
-    socket.on('getTutorials', (data, respond) => {
-      // console.log('getTutorials', data)
-      const limit = data.limit || 5
-      Tutorial
-      .getJoin({ author: true, languages: true })
-      .pluck(
-        'id',
-        'title',
-        'contentHtml',
-        'commentsCount',
-        'createdAt',
-        'updatedAt',
-        { author: ['id', 'username', 'fullName'] },
-        { languages: ['id', 'name', 'slug'] }
-      )
-      .orderBy(r.desc('createdAt'))
-      .limit(limit)
-      .execute()
-      .then((data) => {
-        // console.log('receiveTutorials', data)
-        socket.emit('receiveTutorials', data)
-        respond()
-      })
-    })
-
-    socket.on('login', function (credentials, respond) {
-      console.log('login credentials', credentials)
-      var email = credentials.email.toString().trim().toLowerCase()
-      var password = credentials.password.toString().trim()
-      var username = credentials.username.toString().trim().toLowerCase()
-      User.filter({ email }).run().then((users) => {
-        let user = users[0]
-        console.log('users', users)
-        if (!users.length) {
-          user = new User({ email, password, username })
-
-          return user.saveAll()
-          .then((user) => {
-            // console.log('created user', user)
-            // delete user.password
-            console.log('setAuthToken 1', user)
-            socket.setAuthToken(user)
-            respond()
-          })
-          .catch(respond)
-        }
-
-        // console.log('founded user', user)
-        user.checkPassword(password, (err, valid) => {
-          console.log('checkPassword result:', err, valid)
-          // console.log('password:', password)
-          // console.log('user password:', user.password)
-          if (err || !valid) return respond('Incorrect password.')
-          // delete user.password
-          console.log('setAuthToken 2', user)
-          socket.setAuthToken(user)
-          respond()
-        })
-      }).catch(respond)
-    })
+    handlers.tutorials.create(socket)
+    handlers.tutorials.find(socket)
+    handlers.auth.signup(socket)
+    handlers.auth.signin(socket)
   })
 }
 
