@@ -18,6 +18,8 @@ module.exports = {
           value: tutorial,
           oldValue: doc.getOldValue()
         })
+
+        scServer.exchange.publish('tutorial:' + tutorial.id + ':update', tutorial)
       })
     }))
     .error(onError)
@@ -57,6 +59,31 @@ module.exports = {
       .execute()
       .then((data) => {
         socket.emit('tutorials:update', data)
+        respond()
+      })
+    })
+  },
+
+  findOne (socket) {
+    socket.on('tutorial:findOne', (data, respond) => {
+      const id = data.id
+
+      Tutorial
+      .get(id)
+      .getJoin({ author: true, languages: true })
+      .pluck(
+        'id',
+        'title',
+        'contentHtml',
+        'commentsCount',
+        'createdAt',
+        'updatedAt',
+        { author: ['id', 'username', 'fullName'] },
+        { languages: ['id', 'name', 'slug'] }
+      )
+      .execute()
+      .then((data) => {
+        socket.emit('tutorial:' + data.id + ':update', data)
         respond()
       })
     })

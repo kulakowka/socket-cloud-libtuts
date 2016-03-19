@@ -22,6 +22,7 @@ module.exports.run = function (worker) {
   scServer.on('connection', (socket) => {
     handlers.tutorials.create(socket)
     handlers.tutorials.find(socket)
+    handlers.tutorials.findOne(socket)
     handlers.auth.signup(socket)
     handlers.auth.signin(socket)
   })
