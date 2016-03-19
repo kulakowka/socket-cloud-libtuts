@@ -22,7 +22,7 @@ module.exports.run = function (worker) {
 
   Tutorial
   .orderBy({ index: r.desc('createdAt') })
-  .limit(10)
+  .limit(5)
   .changes()
   .then((feed) => feed.each((error, doc) => {
     if (error) {
@@ -34,7 +34,7 @@ module.exports.run = function (worker) {
     .get(doc.id)
     .getJoin({author: true})
     .then((tutorial) => {
-      scServer.exchange.publish('tutorialsChanges', {
+      scServer.exchange.publish('changesTutorials', {
         isSaved: doc.isSaved(),
         value: tutorial,
         oldValue: doc.getOldValue()
@@ -75,7 +75,7 @@ module.exports.run = function (worker) {
 
     socket.on('getTutorials', (data, respond) => {
       // console.log('getTutorials', data)
-      const limit = data.limit || 10
+      const limit = data.limit || 5
       Tutorial
       .getJoin({ author: true, languages: true })
       .pluck(
@@ -99,13 +99,13 @@ module.exports.run = function (worker) {
     })
 
     socket.on('login', function (credentials, respond) {
-      // console.log('login credentials', credentials)
+      console.log('login credentials', credentials)
       var email = credentials.email.toString().trim().toLowerCase()
       var password = credentials.password.toString().trim()
       var username = credentials.username.toString().trim().toLowerCase()
       User.filter({ username }).run().then((users) => {
         let user = users[0]
-        // console.log('users', users)
+        console.log('users', users)
         if (!users.length) {
           user = new User({ email, password, username })
 
@@ -113,6 +113,7 @@ module.exports.run = function (worker) {
           .then((user) => {
             // console.log('created user', user)
             // delete user.password
+            console.log('setAuthToken 1', user)
             socket.setAuthToken(user)
             respond()
           })
@@ -126,7 +127,7 @@ module.exports.run = function (worker) {
           // console.log('user password:', user.password)
           if (err || !valid) return respond('Incorrect password.')
           // delete user.password
-          // console.log('setAuthToken 2', user)
+          console.log('setAuthToken 2', user)
           socket.setAuthToken(user)
           respond()
         })

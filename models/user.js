@@ -49,7 +49,8 @@ User.ensureIndex('username')
  */
 User.define('checkPassword', function (password, callback) {
   console.log('checkPassword', password, this.password)
-  bcrypt.compare(password, this.password, callback)
+  // if (this.password === password) return callback(null, true)
+  bcrypt.compare(password.toString().trim(), this.password.toString().trim(), callback)
 })
 
 // Add newbie role
