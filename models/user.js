@@ -43,12 +43,32 @@ User.ensureIndex('username')
 //   .catch(next)
 // })
 
+// let pswd = 'ak87c210xx'
+
+// bcrypt.genSalt(10, (err, salt) => {
+//   if (err) return console.log(err)
+
+//   bcrypt.hash(pswd, salt, (err, hash) => {
+//     if (err) return console.log(err)
+
+//     bcrypt.compare(pswd, hash, (err, valid) => {
+//       if (err) return console.log(err)
+
+//       console.log('bcrypt')
+//       console.log('pswd:', pswd)
+//       console.log('salt:', salt)
+//       console.log('hash:', hash)
+//       console.log('valid:', valid)
+//     })
+//   })
+// })
+
 /**
  * Методы экземпляра модеи
  * account.checkPassword()
  */
 User.define('checkPassword', function (password, callback) {
-  console.log('checkPassword', password, this.password)
+  // console.log('checkPassword', password, this.password)
   // if (this.password === password) return callback(null, true)
   bcrypt.compare(password, this.password, callback)
 })
@@ -66,13 +86,21 @@ User.pre('save', function (next) {
 
 // Encrypt password
 User.pre('save', function (next) {
+  // console.log('save user')
+  // console.log('getOldValue:', this.getOldValue())
+  // console.log('isSaved:', this.isSaved())
+  // console.log('this:', this)
+
   if (!this.password) return next()
+  if (this.isSaved()) return next()  // если редактирование - то пропускаем (иначе он каждый раз будет сам себя перезатирать при каждом обновлении)
+
+  // console.log('save user 2')
 
   bcrypt.genSalt(10, (err, salt) => {
     if (err) return next(err)
     bcrypt.hash(this.password, salt, (err, hash) => {
       if (err) return next(err)
-      console.log('hash', hash)
+      console.log('PASSWORD UPDATED', hash)
       this.password = hash
       next()
     })
