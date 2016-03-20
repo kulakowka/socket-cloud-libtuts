@@ -50,7 +50,7 @@ User.ensureIndex('username')
 User.define('checkPassword', function (password, callback) {
   console.log('checkPassword', password, this.password)
   // if (this.password === password) return callback(null, true)
-  bcrypt.compare(password.toString().trim(), this.password.toString().trim(), callback)
+  bcrypt.compare(password, this.password, callback)
 })
 
 // Add newbie role
@@ -67,10 +67,12 @@ User.pre('save', function (next) {
 // Encrypt password
 User.pre('save', function (next) {
   if (!this.password) return next()
+
   bcrypt.genSalt(10, (err, salt) => {
     if (err) return next(err)
     bcrypt.hash(this.password, salt, (err, hash) => {
       if (err) return next(err)
+      console.log('hash', hash)
       this.password = hash
       next()
     })

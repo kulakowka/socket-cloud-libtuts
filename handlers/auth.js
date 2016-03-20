@@ -8,11 +8,12 @@ module.exports = {
       var email = credentials.email.toString().trim().toLowerCase()
       var password = credentials.password.toString().trim()
 
-      User.filter({ email }).run().then((users) => {
+      User.filter({ email }).then((users) => {
         if (!users.length) return respond('User not found.')
 
         let user = users.pop()
         user.checkPassword(password, (err, valid) => {
+          console.log(err, valid)
           if (err || !valid) return respond('Incorrect password.')
           delete user.password
           socket.setAuthToken(user)
