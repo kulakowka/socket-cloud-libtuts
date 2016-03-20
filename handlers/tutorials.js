@@ -11,7 +11,7 @@ module.exports = {
     .then((feed) => feed.each((error, doc) => {
       if (error) return onError(error)
 
-      Tutorial.get(doc.id).getJoin({author: true})
+      Tutorial.get(doc.id).getJoin({author: true}).execute()
       .then((tutorial) => {
         scServer.exchange.publish('tutorials:changes', {
           isSaved: doc.isSaved(),

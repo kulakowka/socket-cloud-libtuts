@@ -10,7 +10,7 @@ module.exports = {
     .then((feed) => feed.each((error, doc) => {
       if (error) return onError(error)
 
-      Language.get(doc.id).run()
+      Language.get(doc.id).execute()
       .then((language) => {
         scServer.exchange.publish('languages:changes', {
           isSaved: doc.isSaved(),

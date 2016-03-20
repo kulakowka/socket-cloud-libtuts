@@ -9,8 +9,9 @@ module.exports = {
     Project.changes()
     .then((feed) => feed.each((error, doc) => {
       if (error) return onError(error)
+      console.log('changed', doc)
 
-      Project.get(doc.id).run()
+      Project.get(doc.id).execute()
       .then((project) => {
         scServer.exchange.publish('projects:changes', {
           isSaved: doc.isSaved(),
