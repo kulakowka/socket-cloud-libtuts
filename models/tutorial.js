@@ -7,7 +7,12 @@ var thinky = require('utils/thinky')
 var type = thinky.type
 var r = thinky.r
 var User = require('models/user')
-const highlightjs = require('highlight.js')
+var highlightjs = require('highlight.js')
+// var emojione = require('emojione')
+var emoji = require('emoji-parser')
+
+// keep emoji-images in sync with the official repository
+emoji.init().update()
 
 marked.setOptions({
   // renderer: new marked.Renderer(),
@@ -40,7 +45,7 @@ Tutorial.ensureIndex('createdAt')
 
 // marked content
 Tutorial.pre('save', function (next) {
-  if (this.content) this.contentHtml = marked(this.content)
+  if (this.content) this.contentHtml = emoji.parse(marked(this.content), 'http://localhost:8000/emoji/images')
   next()
 })
 
