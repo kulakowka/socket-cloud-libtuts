@@ -10,6 +10,7 @@ var User = require('models/user')
 var highlightjs = require('highlight.js')
 // var emojione = require('emojione')
 var emoji = require('emoji-parser')
+var slug = require('slug')
 
 // keep emoji-images in sync with the official repository
 emoji.init().update()
@@ -48,6 +49,7 @@ Tutorial.ensureIndex('createdAt')
 Tutorial.pre('save', function (next) {
   if (this.content) this.contentHtml = emoji.parse(marked(this.content), 'http://localhost:8000/emoji/images')
   if (this.source) this.domain = getDomain(this.source)
+  if (this.keywords) this.keywords = this.keywords.map((keyword) => slug(keyword.trim().toLowerCase()))
   next()
 })
 

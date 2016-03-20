@@ -2,7 +2,8 @@
 
 var thinky = require('utils/thinky')
 var r = thinky.r
-var { Tutorial, User } = require('models')
+var { Tutorial, User, Language, Project } = require('models')
+var co = require('co')
 
 module.exports = {
   // все изменения в списке топ 10 уроков
@@ -28,17 +29,45 @@ module.exports = {
   create (socket) {
     socket.on('tutorials:create', (data, respond) => {
       const id = socket.getAuthToken().id
+      if (!id) return respond('Login please')
+
       var title = data.title
       var content = data.content
       var source = data.source
       var keywords = data.keywords
+      var languages = data.languages
+      var projects = data.projects
 
-      User.get(id).run().then((author) => {
-        var tutorial = new Tutorial({ title, content, author, source, keywords })
-        return tutorial.saveAll().then((result) => {
-          respond()
-        })
-      }).catch(respond)
+      co(function * () {
+        if (languages) {
+          languages = typeof languages === 'string' ? [languages] : languages
+          languages = languages.map((language) => language.value)
+          languages = yield Language.getAll(...languages).run()
+        }
+
+        if (projects) {
+          projects = typeof projects === 'string' ? [projects] : projects
+          projects = projects.map((project) => project.value)
+          projects = yield Project.getAll(...projects).run()
+        }
+
+        if (keywords) {
+          keywords = keywords.split(',')
+        }
+
+        let author = yield User.get(id).run()
+
+        var tutorial = new Tutorial({ title, content, author, source, keywords, languages, projects })
+
+        console.log('tutorial', tutorial)
+
+        return tutorial.saveAll()
+      })
+      .then((result) => {
+        console.log('result', result)
+        respond()
+      })
+      .catch(respond)
     })
   },
 
@@ -47,7 +76,7 @@ module.exports = {
       const limit = data.limit || 5
 
       Tutorial
-      .getJoin({ author: true, languages: true })
+      .getJoin({ author: true, languages: true, projects: true })
       .pluck(
         'id',
         'title',
@@ -59,7 +88,8 @@ module.exports = {
         'createdAt',
         'updatedAt',
         { author: ['id', 'username', 'fullName'] },
-        { languages: ['id', 'name', 'slug'] }
+        { languages: ['id', 'name', 'slug'] },
+        { projects: ['id', 'name', 'slug'] }
       )
       .orderBy(r.desc('createdAt'))
       .limit(limit)
@@ -77,7 +107,7 @@ module.exports = {
 
       Tutorial
       .get(id)
-      .getJoin({ author: true, languages: true })
+      .getJoin({ author: true, languages: true, projects: true })
       .pluck(
         'id',
         'title',
@@ -89,10 +119,12 @@ module.exports = {
         'createdAt',
         'updatedAt',
         { author: ['id', 'username', 'fullName'] },
-        { languages: ['id', 'name', 'slug'] }
+        { languages: ['id', 'name', 'slug'] },
+        { projects: ['id', 'name', 'slug'] }
       )
       .execute()
       .then((data) => {
+        console.log('tutorial:' + data.id + ':update', data)
         socket.emit('tutorial:' + data.id + ':update', data)
         respond()
       })
