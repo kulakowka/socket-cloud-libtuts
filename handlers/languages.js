@@ -1,6 +1,5 @@
 'use strict'
 
-var thinky = require('utils/thinky')
 var { Language, User } = require('models')
 
 module.exports = {
