@@ -30,9 +30,11 @@ module.exports = {
       const id = socket.getAuthToken().id
       var title = data.title
       var content = data.content
+      var source = data.source
+      var keywords = data.keywords
 
       User.get(id).run().then((author) => {
-        var tutorial = new Tutorial({ title, content, author })
+        var tutorial = new Tutorial({ title, content, author, source, keywords })
         return tutorial.saveAll().then((result) => {
           respond()
         })
@@ -49,6 +51,9 @@ module.exports = {
       .pluck(
         'id',
         'title',
+        'source',
+        'domain',
+        'keywords',
         'contentHtml',
         'commentsCount',
         'createdAt',
@@ -76,6 +81,9 @@ module.exports = {
       .pluck(
         'id',
         'title',
+        'source',
+        'domain',
+        'keywords',
         'contentHtml',
         'commentsCount',
         'createdAt',

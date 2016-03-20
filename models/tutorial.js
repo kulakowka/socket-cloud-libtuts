@@ -32,12 +32,13 @@ var Tutorial = thinky.createModel('Tutorial', {
   id: type.string(),
   title: type.string(),
   content: type.string(),
+  source: type.string(),
+  domain: type.string(),
   contentHtml: type.string(),
   commentsCount: type.number().default(0),
   createdAt: type.date().default(r.now()),
-  updatedAt: type.date().default(r.now())
-  // authorId => User
-  // languages => [Language, Language]
+  updatedAt: type.date().default(r.now()),
+  keywords: [type.string()]
   // projects => [Project, Project]
 })
 
@@ -46,6 +47,7 @@ Tutorial.ensureIndex('createdAt')
 // marked content
 Tutorial.pre('save', function (next) {
   if (this.content) this.contentHtml = emoji.parse(marked(this.content), 'http://localhost:8000/emoji/images')
+  if (this.source) this.domain = getDomain(this.source)
   next()
 })
 
@@ -70,3 +72,10 @@ Tutorial.post('delete', function (next) {
 })
 
 module.exports = Tutorial
+
+const _url = require('url')
+
+function getDomain (url) {
+  let urlObject = _url.parse(url)
+  return urlObject.hostname && urlObject.hostname.replace(/^www./i, '')
+}
