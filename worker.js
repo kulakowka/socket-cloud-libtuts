@@ -37,5 +37,7 @@ module.exports.run = function (worker) {
 
     handlers.auth.signup(socket)
     handlers.auth.signin(socket)
+
+    handlers.info.show(socket)
   })
 }

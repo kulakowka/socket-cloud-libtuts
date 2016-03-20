@@ -28,12 +28,14 @@ module.exports = {
   create (socket) {
     socket.on('tutorials:create', (data, respond) => {
       const id = socket.getAuthToken().id
-      var title = data.title.trim()
-      var content = data.content.trim()
+      var title = data.title
+      var content = data.content
 
       User.get(id).run().then((author) => {
         var tutorial = new Tutorial({ title, content, author })
-        return tutorial.saveAll().then((result) => respond())
+        return tutorial.saveAll().then((result) => {
+          respond()
+        })
       }).catch(respond)
     })
   },

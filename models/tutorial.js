@@ -7,6 +7,21 @@ var thinky = require('utils/thinky')
 var type = thinky.type
 var r = thinky.r
 var User = require('models/user')
+const highlightjs = require('highlight.js')
+
+marked.setOptions({
+  // renderer: new marked.Renderer(),
+  gfm: true,
+  tables: false,
+  breaks: true,
+  pedantic: false,
+  sanitize: true,
+  smartLists: true,
+  smartypants: false,
+  highlight: function (code, lang, callback) {
+    return highlightjs.highlightAuto(code).value
+  }
+})
 
 var Tutorial = thinky.createModel('Tutorial', {
   id: type.string(),
