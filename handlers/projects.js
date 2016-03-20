@@ -9,7 +9,7 @@ module.exports = {
     Project.changes()
     .then((feed) => feed.each((error, doc) => {
       if (error) return onError(error)
-      console.log('changed', doc)
+      // console.log('changed', doc)
 
       Project.get(doc.id).execute()
       .then((project) => {
@@ -19,7 +19,7 @@ module.exports = {
           oldValue: doc.getOldValue()
         })
 
-        scServer.exchange.publish('project:' + project.id + ':update', project)
+        scServer.exchange.publish('project:' + project.slug + ':update', project)
       })
     }))
     .error(onError)
@@ -78,7 +78,7 @@ module.exports = {
       .then((projects) => {
         let project = projects.pop()
         if (!project) return respond('not found')
-        console.log('emit:project', project)
+        // console.log('emit:project', project)
         socket.emit('project:' + project.slug + ':update', project)
         respond()
       })

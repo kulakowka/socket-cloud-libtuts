@@ -14,6 +14,7 @@ module.exports.run = function (worker) {
   var scServer = worker.scServer
 
   app.use(serveStatic(path.resolve(__dirname, 'public')))
+  app.get('/shield/:slug.svg', handlers.shield.show)
 
   httpServer.on('request', app)
 

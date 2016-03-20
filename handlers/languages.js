@@ -18,7 +18,7 @@ module.exports = {
           oldValue: doc.getOldValue()
         })
 
-        scServer.exchange.publish('language:' + language.id + ':update', language)
+        scServer.exchange.publish('language:' + language.slug + ':update', language)
       })
     }))
     .error(onError)
