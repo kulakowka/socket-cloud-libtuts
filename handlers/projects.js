@@ -60,10 +60,10 @@ module.exports = {
 
   findOne (socket) {
     socket.on('project:findOne', (data, respond) => {
-      const id = data.id
+      const slug = data.id
 
       Project
-      .get(id)
+      .filter({ slug })
       .getJoin()
       .pluck(
         'id',
@@ -75,8 +75,11 @@ module.exports = {
         { author: ['id', 'username', 'fullName'] }
       )
       .execute()
-      .then((data) => {
-        socket.emit('project:' + data.id + ':update', data)
+      .then((projects) => {
+        let project = projects.pop()
+        if (!project) return respond('not found')
+        console.log('emit:project', project)
+        socket.emit('project:' + project.slug + ':update', project)
         respond()
       })
     })
