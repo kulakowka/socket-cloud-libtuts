@@ -22,10 +22,11 @@ module.exports.run = function (worker) {
   httpServer.on('request', app)
 
   // WebSocket
-  scServer.on('connection', handlers.tutorials)
+  scServer.on('connection', handlers.auth)
+  scServer.on('connection', handlers.comments)
+  scServer.on('connection', handlers.info)
   scServer.on('connection', handlers.languages)
   scServer.on('connection', handlers.projects)
+  scServer.on('connection', handlers.tutorials)
   scServer.on('connection', handlers.users)
-  scServer.on('connection', handlers.info)
-  scServer.on('connection', handlers.auth)
 }

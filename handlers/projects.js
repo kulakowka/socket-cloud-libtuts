@@ -23,6 +23,12 @@ module.exports = function onConnection (socket) {
 
   // Create
   socket.on('create ' + ITEM, (data, cb) => {
+    let currentUser = socket.getAuthToken()
+
+    if (!currentUser) return cb('Login please')
+
+    data.authorId = currentUser.id
+
     createItem(data)
     .then((item) => {
       socket.emit(ITEM + ' created', item)

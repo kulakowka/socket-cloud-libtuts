@@ -1,10 +1,10 @@
 'use strict'
 
-var { Language } = require('models')
+var { Comment } = require('models')
 
-const Model = Language
-const ITEMS = 'languages'
-const ITEM = 'language'
+const Model = Comment
+const ITEMS = 'comments'
+const ITEM = 'comment'
 
 module.exports = function onConnection (socket) {
   // Find all
@@ -68,6 +68,7 @@ function getItem (data) {
 }
 
 function createItem (data) {
+  console.log('createItem', data)
   let item = new Model(data)
   return item.saveAll()
 }
