@@ -6,7 +6,7 @@ var { Project } = require('models')
 module.exports = {
   show (req, res, next) {
     const slug = req.params.slug
-    console.log('slug', slug)
+    // console.log('slug', slug)
     Project
     .filter({ slug })
     .getJoin()
@@ -23,7 +23,7 @@ module.exports = {
     .then((projects) => {
       let project = projects.pop()
       let count = 0
-      console.log('project', project)
+      // console.log('project', project)
       if (project && project.tutorialsCount) count = project.tutorialsCount
 
       res.set({

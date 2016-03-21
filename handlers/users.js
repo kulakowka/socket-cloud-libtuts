@@ -25,7 +25,7 @@ module.exports = {
       .then((users) => {
         let user = users.pop()
         if (!user) return respond('user not found')
-        console.log('emit:user', user)
+        // console.log('emit:user', user)
         socket.emit('user:' + user.username + ':update', user)
         respond()
       })
