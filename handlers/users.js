@@ -1,6 +1,6 @@
 'use strict'
 
-var { User, Tutorial } = require('models')
+var { User, Tutorial, Comment } = require('models')
 
 const Model = User
 const ITEMS = 'users'
@@ -25,6 +25,13 @@ module.exports = function onConnection (socket) {
   socket.on('get ' + ITEM + '_tutorials', (data, cb) => {
     getItemTutorials(data)
     .then((items) => socket.emit('receive ' + ITEM + '_tutorials', items, cb))
+    .catch(cb)
+  })
+
+  // Find user comments
+  socket.on('get ' + ITEM + '_comments', (data, cb) => {
+    getItemComments(data)
+    .then((items) => socket.emit('receive ' + ITEM + '_comments', items, cb))
     .catch(cb)
   })
 
@@ -80,8 +87,16 @@ function deleteItem (data) {
 
 function getItemTutorials (data) {
   const username = data.username
-  return Model.filter({ username }).getJoin().execute().then((items) => items.pop()).then((item) => {
+  return Model.filter({ username }).execute().then((items) => items.pop()).then((item) => {
     const authorId = item.id
     return Tutorial.filter({ authorId }).getJoin().execute()
+  })
+}
+
+function getItemComments (data) {
+  const username = data.username
+  return Model.filter({ username }).execute().then((items) => items.pop()).then((item) => {
+    const authorId = item.id
+    return Comment.filter({ authorId }).getJoin().execute()
   })
 }

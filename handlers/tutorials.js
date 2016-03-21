@@ -1,6 +1,6 @@
 'use strict'
 
-var { Tutorial, Comment } = require('models')
+var { Tutorial, Comment, Language, Project } = require('models')
 
 const Model = Tutorial
 const ITEMS = 'tutorials'
@@ -35,9 +35,18 @@ module.exports = function onConnection (socket) {
     if (!currentUser) return cb('Login please')
 
     data.authorId = currentUser.id
-  
+
+    // if (data.languages) {
+    //   Language.getAll(...data.languages).run().then((languages) => {
+    //   })
+    // }
+    console.log('data', data)
+
     createItem(data)
-    .then((item) => socket.emit(ITEM + ' created', item, cb))
+    .then((item) => {
+      socket.emit(ITEM + ' created', item)
+      cb()
+    })
     .catch(cb)
   })
 
