@@ -1,92 +1,81 @@
 'use strict'
 
-var { Language, User } = require('models')
+var { Language } = require('models')
 
-module.exports = {
-  // все изменения в списке языков
-  changes (scServer) {
-    Language.changes()
-    .then((feed) => feed.each((error, doc) => {
-      if (error) return onError(error)
+const Model = Language
+const ITEMS = 'languages'
+const ITEM = 'language'
 
-      Language.get(doc.id).execute()
-      .then((language) => {
-        scServer.exchange.publish('languages:changes', {
-          isSaved: doc.isSaved(),
-          value: language,
-          oldValue: doc.getOldValue()
-        })
+module.exports = function onConnection (socket) {
+  // Find all
+  socket.on('get ' + ITEMS, (data, cb) => {
+    getItems(data)
+    .then((items) => socket.emit('receive ' + ITEMS, items, cb))
+    .catch(cb)
+  })
 
-        scServer.exchange.publish('language:' + language.slug + ':update', language)
-      })
-    }))
-    .error(onError)
-  },
+  // Find one
+  socket.on('get ' + ITEM, (data, cb) => {
+    getItem(data)
+    .then((item) => socket.emit('receive ' + ITEM, item, cb))
+    .catch(cb)
+  })
 
-  create (socket) {
-    socket.on('languages:create', (data, respond) => {
-      const id = socket.getAuthToken().id
-      var name = data.name.trim()
-
-      User.get(id).run().then((author) => {
-        var language = new Language({ name, author })
-        return language.saveAll().then((result) => respond())
-      }).catch(respond)
+  // Create
+  socket.on('create ' + ITEM, (data, cb) => {
+    createItem(data)
+    .then((item) => {
+      socket.emit(ITEM + ' created', item)
+      cb()
     })
-  },
+    .catch(cb)
+  })
 
-  find (socket) {
-    socket.on('languages:find', (data, respond) => {
-      Language
-      .getJoin()
-      .pluck(
-        'id',
-        'name',
-        'slug',
-        'tutorialsCount',
-        'projectsCount',
-        'createdAt',
-        'updatedAt',
-        { author: ['id', 'username', 'fullName'] }
-      )
-      .execute()
-      .then((data) => {
-        socket.emit('languages:update', data)
-        respond()
-      })
+  // Update
+  socket.on('update ' + ITEM, (data, cb) => {
+    updateItem(data)
+    .then((item) => {
+      socket.emit(ITEM + ' updated', item)
+      cb()
     })
-  },
+    .catch(cb)
+  })
 
-  findOne (socket) {
-    socket.on('language:findOne', (data, respond) => {
-      const slug = data.id
-
-      Language
-      .filter({ slug })
-      .getJoin()
-      .pluck(
-        'id',
-        'name',
-        'slug',
-        'tutorialsCount',
-        'projectsCount',
-        'createdAt',
-        'updatedAt',
-        { author: ['id', 'username', 'fullName'] }
-      )
-      .execute()
-      .then((languages) => {
-        let language = languages.pop()
-        if (!language) return respond('not found')
-        console.log('emit:language', language)
-        socket.emit('language:' + language.slug + ':update', language)
-        respond()
-      })
+  // Delete
+  socket.on('delete ' + ITEM, (data, cb) => {
+    deleteItem(data)
+    .then((item) => {
+      socket.emit(ITEM + ' deleted', item)
+      cb()
     })
-  }
+    .catch(cb)
+  })
 }
 
-function onError (error) {
-  console.log(error)
-  process.exit(1)
+function getItems (data) {
+  return Model.getJoin().execute()
+}
+
+function getItem (data) {
+  const slug = data.slug
+  return Model.filter({ slug }).getJoin().execute().then((items) => items.pop())
+}
+
+function createItem (data) {
+  let item = new Model(data)
+  return item.saveAll()
+}
+
+function updateItem (data) {
+  const slug = data.slug
+  return Model.filter({ slug }).getJoin().execute().then((items) => items.pop()).then((item) => {
+    return item.merge(data).saveAll()
+  })
+}
+
+function deleteItem (data) {
+  const slug = data.slug
+  return Model.filter({ slug }).getJoin().execute().then((items) => items.pop()).then((item) => {
+    return item.delete()
+  })
 }

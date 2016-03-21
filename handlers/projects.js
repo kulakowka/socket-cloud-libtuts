@@ -1,91 +1,81 @@
 'use strict'
 
-var { Project, User } = require('models')
+var { Project } = require('models')
 
-module.exports = {
-  // все изменения в списке проектов
-  changes (scServer) {
-    Project.changes()
-    .then((feed) => feed.each((error, doc) => {
-      if (error) return onError(error)
-      // console.log('changed', doc)
+const Model = Project
+const ITEMS = 'projects'
+const ITEM = 'project'
 
-      Project.get(doc.id).execute()
-      .then((project) => {
-        scServer.exchange.publish('projects:changes', {
-          isSaved: doc.isSaved(),
-          value: project,
-          oldValue: doc.getOldValue()
-        })
+module.exports = function onConnection (socket) {
+  // Find all
+  socket.on('get ' + ITEMS, (data, cb) => {
+    getItems(data)
+    .then((items) => socket.emit('receive ' + ITEMS, items, cb))
+    .catch(cb)
+  })
 
-        scServer.exchange.publish('project:' + project.slug + ':update', project)
-      })
-    }))
-    .error(onError)
-  },
+  // Find one
+  socket.on('get ' + ITEM, (data, cb) => {
+    getItem(data)
+    .then((item) => socket.emit('receive ' + ITEM, item, cb))
+    .catch(cb)
+  })
 
-  create (socket) {
-    socket.on('projects:create', (data, respond) => {
-      const id = socket.getAuthToken().id
-      var name = data.name.trim()
-
-      User.get(id).run().then((author) => {
-        var project = new Project({ name, author })
-        return project.saveAll().then((result) => respond())
-      }).catch(respond)
+  // Create
+  socket.on('create ' + ITEM, (data, cb) => {
+    createItem(data)
+    .then((item) => {
+      socket.emit(ITEM + ' created', item)
+      cb()
     })
-  },
+    .catch(cb)
+  })
 
-  find (socket) {
-    socket.on('projects:find', (data, respond) => {
-      Project
-      .getJoin()
-      .pluck(
-        'id',
-        'name',
-        'slug',
-        'tutorialsCount',
-        'createdAt',
-        'updatedAt',
-        { author: ['id', 'username', 'fullName'] }
-      )
-      .execute()
-      .then((data) => {
-        socket.emit('projects:update', data)
-        respond()
-      })
+  // Update
+  socket.on('update ' + ITEM, (data, cb) => {
+    updateItem(data)
+    .then((item) => {
+      socket.emit(ITEM + ' updated', item)
+      cb()
     })
-  },
+    .catch(cb)
+  })
 
-  findOne (socket) {
-    socket.on('project:findOne', (data, respond) => {
-      const slug = data.id
-
-      Project
-      .filter({ slug })
-      .getJoin()
-      .pluck(
-        'id',
-        'name',
-        'slug',
-        'tutorialsCount',
-        'createdAt',
-        'updatedAt',
-        { author: ['id', 'username', 'fullName'] }
-      )
-      .execute()
-      .then((projects) => {
-        let project = projects.pop()
-        if (!project) return respond('not found')
-        // console.log('emit:project', project)
-        socket.emit('project:' + project.slug + ':update', project)
-        respond()
-      })
+  // Delete
+  socket.on('delete ' + ITEM, (data, cb) => {
+    deleteItem(data)
+    .then((item) => {
+      socket.emit(ITEM + ' deleted', item)
+      cb()
     })
-  }
+    .catch(cb)
+  })
 }
 
-function onError (error) {
-  console.log(error)
-  process.exit(1)
+function getItems (data) {
+  return Model.getJoin().execute()
+}
+
+function getItem (data) {
+  const slug = data.slug
+  return Model.filter({ slug }).getJoin().execute().then((items) => items.pop())
+}
+
+function createItem (data) {
+  let item = new Model(data)
+  return item.saveAll()
+}
+
+function updateItem (data) {
+  const slug = data.slug
+  return Model.filter({ slug }).getJoin().execute().then((items) => items.pop()).then((item) => {
+    return item.merge(data).saveAll()
+  })
+}
+
+function deleteItem (data) {
+  const slug = data.slug
+  return Model.filter({ slug }).getJoin().execute().then((items) => items.pop()).then((item) => {
+    return item.delete()
+  })
 }
