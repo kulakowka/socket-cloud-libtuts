@@ -1,6 +1,6 @@
 'use strict'
 
-const ITEM = 'user'
+const ITEM = 'page'
 
 module.exports = function onConnection (socket) {
   // Find one
