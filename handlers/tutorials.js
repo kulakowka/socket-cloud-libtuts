@@ -1,6 +1,6 @@
 'use strict'
 
-var { Tutorial } = require('models')
+var { Tutorial, Comment } = require('models')
 
 const Model = Tutorial
 const ITEMS = 'tutorials'
@@ -18,6 +18,13 @@ module.exports = function onConnection (socket) {
   socket.on('get ' + ITEM, (data, cb) => {
     getItem(data)
     .then((item) => socket.emit('receive ' + ITEM, item, cb))
+    .catch(cb)
+  })
+
+  // Find tutorial comments
+  socket.on('get ' + ITEM + '_comments', (data, cb) => {
+    getItemComments(data)
+    .then((items) => socket.emit('receive ' + ITEM + '_comments', items, cb))
     .catch(cb)
   })
 
@@ -66,4 +73,9 @@ function deleteItem (data) {
   return Model.get(data.id).run().then((item) => {
     return item.delete()
   })
+}
+
+function getItemComments (data) {
+  const tutorialId = data.id
+  return Comment.filter({ tutorialId }).getJoin().execute()
 }
