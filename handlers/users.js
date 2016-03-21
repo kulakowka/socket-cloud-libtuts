@@ -1,6 +1,6 @@
 'use strict'
 
-var { User } = require('models')
+var { User, Tutorial } = require('models')
 
 const Model = User
 const ITEMS = 'users'
@@ -18,6 +18,13 @@ module.exports = function onConnection (socket) {
   socket.on('get ' + ITEM, (data, cb) => {
     getItem(data)
     .then((item) => socket.emit('receive ' + ITEM, item, cb))
+    .catch(cb)
+  })
+
+  // Find user tutorials
+  socket.on('get ' + ITEM + '_tutorials', (data, cb) => {
+    getItemTutorials(data)
+    .then((items) => socket.emit('receive ' + ITEM + '_tutorials', items, cb))
     .catch(cb)
   })
 
@@ -68,5 +75,13 @@ function deleteItem (data) {
   const username = data.username
   return Model.filter({ username }).getJoin().execute().then((items) => items.pop()).then((item) => {
     return item.delete()
+  })
+}
+
+function getItemTutorials (data) {
+  const username = data.username
+  return Model.filter({ username }).getJoin().execute().then((items) => items.pop()).then((item) => {
+    const authorId = item.id
+    return Tutorial.filter({ authorId }).getJoin().execute()
   })
 }
