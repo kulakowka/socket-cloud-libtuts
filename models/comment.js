@@ -7,6 +7,25 @@ var type = thinky.type
 var r = thinky.r
 var Tutorial = require('./tutorial')
 var User = require('./user')
+var emoji = require('emoji-parser')
+var highlightjs = require('highlight.js')
+
+// keep emoji-images in sync with the official repository
+emoji.init().update()
+
+marked.setOptions({
+  // renderer: new marked.Renderer(),
+  gfm: true,
+  tables: false,
+  breaks: true,
+  pedantic: false,
+  sanitize: true,
+  smartLists: true,
+  smartypants: false,
+  highlight: function (code, lang, callback) {
+    return highlightjs.highlightAuto(code).value
+  }
+})
 
 var Comment = thinky.createModel('Comment', {
   id: type.string(),
@@ -20,14 +39,14 @@ var Comment = thinky.createModel('Comment', {
 
 // marked content
 Comment.pre('save', function (next) {
-  this.contentHtml = marked(this.content)
+  if (this.content) this.contentHtml = emoji.parse(marked(this.content), 'http://localhost:8000/emoji/images')
   next()
 })
 
 Comment.post('save', function (next) {
   const tutorialId = this.tutorialId
   const authorId = this.authorId
-  co(function* () {
+  co(function * () {
     // increment comments count
     yield Tutorial.get(tutorialId).update({commentsCount: r.row('commentsCount').add(1)}).run()
     yield User.get(authorId).update({commentsCount: r.row('commentsCount').add(1)}).run()
